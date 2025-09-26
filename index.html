@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tebak Garis Ajaib — by Rahman Rahmadhana Sujiwanto (NIM 230210101157)</title>
+<style>
+  :root{
+    --bg:#0b1220; --ink:#e7eefc; --muted:#94a3b8;
+    --card:#111827; --accent:#38bdf8; --accent2:#a78bfa; --win:#22c55e; --lose:#ef4444; --warn:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 600px at 10% -10%, #12223d 0%, transparent 60%),
+      radial-gradient(1200px 600px at 110% 110%, #1a2337 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink); font:500 16px/1.4 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    display:flex; flex-direction:column; gap:16px; padding:16px;
+  }
+  header{
+    border:1px solid rgba(255,255,255,.06); background:linear-gradient(180deg, rgba(56,189,248,.12), rgba(167,139,250,.12));
+    padding:14px 16px; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.25);
+  }
+  header h1{margin:.1rem 0 .35rem 0; font-weight:800; letter-spacing:.2px}
+  header .meta{color:var(--muted); font-size:14px}
+  .wrap{display:grid; grid-template-columns: 1.2fr .8fr; gap:16px;}
+  @media (max-width:1100px){ .wrap{grid-template-columns:1fr} }
+
+  .card{
+    background:rgba(17,24,39,.72); border:1px solid rgba(255,255,255,.06);
+    border-radius:18px; padding:14px; box-shadow:0 18px 50px rgba(0,0,0,.28);
+    backdrop-filter: blur(6px);
+  }
+  canvas{width:100%; height:auto; aspect-ratio: 16/10; background: #0a0f1a; border-radius:12px; display:block}
+  .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+  .stack{display:flex; flex-direction:column; gap:10px}
+  .ctrl{display:flex; align-items:center; gap:10px}
+  .ctrl input[type=range]{flex:1}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+
+  .btn{
+    appearance:none; border:1px solid rgba(255,255,255,.12); background:#0f172a; color:#e5f3ff;
+    padding:10px 14px; border-radius:12px; cursor:pointer; transition: .2s transform, .2s background, .2s border-color;
+  }
+  .btn:hover{transform:translateY(-1px); background:#0b1325; border-color: rgba(56,189,248,.5)}
+  .btn.primary{background:linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%); color:#06131f; border:none; font-weight:800}
+  .btn.ghost{background:transparent}
+  .btn.warn{background:linear-gradient(135deg, #f59e0b 0%, #fde68a 100%); color:#1b1202; border:none; font-weight:800}
+  .btn.full{width:100%}
+
+  .badge{display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.12); color:var(--muted)}
+  .badge.ok{color:#10b981; border-color:#10b98133; background:#10b9811a}
+  .badge.warn{color:#f59e0b; border-color:#f59e0b33; background:#f59e0b1a}
+  .badge.err{color:#ef4444; border-color:#ef444433; background:#ef44441a}
+
+  .score{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px}
+  .score .box{background:#0c1426; border:1px solid rgba(255,255,255,.08); padding:10px; border-radius:12px}
+  .big{font-size:24px; font-weight:800}
+  .hint{font-size:13px; color:var(--muted)}
+  .sep{height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent); margin:10px 0}
+  .eq{font-weight:800}
+  .winner{font-size:18px; font-weight:900}
+  .flex{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .kbd{font:600 12px/1 ui-monospace; padding:4px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.2); background:#0b1325; color:#cde7ff}
+  table{width:100%; border-collapse:separate; border-spacing:0 6px}
+  th,td{padding:8px 10px; text-align:left; font-size:14px}
+  thead th{color:#cbd5e1; font-weight:700}
+  tbody tr{background:#0c1426; border:1px solid rgba(255,255,255,.06)}
+  tbody tr td:first-child{border-top-left-radius:10px; border-bottom-left-radius:10px}
+  tbody tr td:last-child{border-top-right-radius:10px; border-bottom-right-radius:10px}
+
+  .audio-bar{display:flex; gap:8px; align-items:center}
+  .audio-bar input[type=range]{width:120px}
+</style>
+</head>
+<body>
+  <header class="card">
+    <h1>🎯 Tebak Garis Ajaib — Regresi Linier</h1>
+    <div class="meta">
+      by <b>Rahman Rahmadhana Sujiwanto</b> — NIM <b>230210101157</b>
+      <span class="badge" style="margin-left:8px">2 Pemain (hot-seat)</span>
+      <span class="badge ok" id="roundTag" style="margin-left:8px">Ronde 1</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <div class="flex" style="justify-content:space-between; align-items:center">
+        <div>
+          <div class="badge ok">Dataset aktif</div>
+          <div class="hint">Titik menyebar di sekitar garis rahasia y = m·x + b</div>
+        </div>
+        <div class="flex" style="gap:12px">
+          <div class="audio-bar">
+            <button id="soundToggle" class="btn" aria-label="Toggle suara">🔊</button>
+            <input id="vol" type="range" min="0" max="1" step="0.01" value="0.4" title="Volume">
+          </div>
+          <button id="btnNewData" class="btn">🔁 Dataset Baru</button>
+          <button id="btnSameData" class="btn ghost">♻️ Ulangi Tebakan</button>
+        </div>
+      </div>
+      <div class="sep"></div>
+
+      <canvas id="board" width="880" height="550" aria-label="Bidang Kartesius 2D"></canvas>
+      <div class="hint">Keyboard: <span class="kbd">←/→</span> slope (m), <span class="kbd">↑/↓</span> intercept (b), <span class="kbd">Enter</span> kunci.</div>
+
+      <!-- BGM opsional -->
+      <audio id="bgm" src="assets/audio/lofi-study-calm-peaceful-chill-hop-112191.mp3" loop preload="auto" style="display:none"></audio>
+    </section>
+
+    <aside class="card">
+      <div class="grid2">
+        <div class="flex" style="align-items:center">
+          <div class="badge">Giliran</div>
+          <div id="turnTag" class="badge warn">Pemain 1</div>
+        </div>
+        <div class="flex" style="justify-content:flex-end; align-items:center; gap:8px">
+          <span class="hint">⏱️ Sisa Waktu</span>
+          <div id="timerBox" class="badge ok" style="font-weight:800">30.0s</div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="stack">
+        <div class="ctrl mono">
+          <span style="width:90px">Slope (m)</span>
+          <input id="slope" type="range" min="-5" max="5" step="0.01" value="1">
+          <button class="btn" id="mMinus">−</button>
+          <button class="btn" id="mPlus">+</button>
+        </div>
+        <div class="ctrl mono">
+          <span style="width:90px">Intercept (b)</span>
+          <input id="intercept" type="range" min="-10" max="10" step="0.1" value="0">
+          <button class="btn" id="bMinus">−</button>
+          <button class="btn" id="bPlus">+</button>
+        </div>
+
+        <div class="score">
+          <div class="box">
+            <div class="hint">Tebakan Aktif</div>
+            <div class="big mono" id="guessEq">y = 1.00x + 0.0</div>
+          </div>
+          <div class="box">
+            <div class="hint">RMSE Sementara*</div>
+            <div class="big mono" id="liveRmse">—</div>
+          </div>
+        </div>
+        <div class="hint">*RMSE dihitung terhadap titik data.</div>
+
+        <div class="row">
+          <button id="lockBtn" class="btn primary full">✅ Kunci Tebakan Pemain 1</button>
+          <button id="revealBtn" class="btn warn full" disabled>🏁 Lihat Pemenang Ronde</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="stack">
+          <div class="winner" id="winnerText"></div>
+          <div class="row">
+            <div class="box">
+              <div class="hint">RMSE Pemain 1</div>
+              <div class="big mono" id="rmseP1">—</div>
+            </div>
+            <div class="box">
+              <div class="hint">RMSE Pemain 2</div>
+              <div class="big mono" id="rmseP2">—</div>
+            </div>
+          </div>
+          <div class="hint" id="trueEq">Garis asli: disembunyikan</div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="stack">
+          <div class="flex" style="justify-content:space-between; align-items:center">
+            <div class="badge">Papan Skor</div>
+            <div class="flex">
+              <div class="badge">Poin P1: <b id="scoreP1">0</b></div>
+              <div class="badge" style="margin-left:6px">Poin P2: <b id="scoreP2">0</b></div>
+            </div>
+          </div>
+          <div style="max-height:240px; overflow:auto; border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:8px;">
+            <table aria-label="Riwayat Ronde">
+              <thead>
+                <tr><th>Ronde</th><th>RMSE P1</th><th>RMSE P2</th><th>Pemenang</th></tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+          <div class="row">
+            <button id="nextRoundBtn" class="btn full" disabled>➡️ Ronde Baru</button>
+            <button id="resetMatchBtn" class="btn ghost full">🗑️ Reset Semua</button>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <details>
+          <summary><b>📘 Petunjuk</b></summary>
+          <ul>
+            <li>Tujuan: tebak garis <span class="mono">y = m x + b</span> yang meminimalkan RMSE.</li>
+            <li>⏱️ Tiap giliran 30 detik; habis waktu ⇒ kunci otomatis.</li>
+            <li>Poin: Menang = 1, Seri = 0,5 + 0,5.</li>
+          </ul>
+        </details>
+      </div>
+    </aside>
+  </div>
+
+<script>
+(() => {
+  // ===== Konfigurasi =====
+  const TIME_LIMIT = 30.0; // detik per giliran
+
+  // ===== Utilities =====
+  const rnd = (a=0,b=1)=>a+Math.random()*(b-a);
+  const fmt = (x, d=2)=> Number(x).toFixed(d);
+
+  // ===== Audio Manager =====
+  class AudioManager{
+    constructor(){ this.enabled = true; this.ctx = null; this.master = null; this.vol = 0.4; this.bgmEl = document.getElementById('bgm'); }
+    ensureCtx(){
+      if(!this.ctx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AC();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = this.vol;
+        this.master.connect(this.ctx.destination);
+      }
+      if(this.ctx.state==='suspended') this.ctx.resume();
+    }
+    setVolume(v){ this.vol=v; if(this.master) this.master.gain.value=v; if(this.bgmEl){ this.bgmEl.volume=Math.min(0.8,v); } }
+    setEnabled(on){
+      this.enabled = on;
+      if(!on){ if(this.bgmEl) this.bgmEl.pause(); }
+      else{
+        this.ensureCtx();
+        if(this.bgmEl && this.bgmEl.src && this.bgmEl.src.length>0){
+          this.bgmEl.volume = Math.min(0.8, this.vol);
+          this.bgmEl.play().catch(()=>{});
+        }
+      }
+    }
+    _tone(freq, dur, type='sine', gain=0.2){
+      if(!this.enabled) return;
+      this.ensureCtx();
+      const t = this.ctx.currentTime;
+      const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+      o.type=type; o.frequency.value=freq;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t+0.01); g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g).connect(this.master); o.start(t); o.stop(t+dur+0.02);
+    }
+    _arp(freqs, step){
+      if(!this.enabled) return; this.ensureCtx(); let t=this.ctx.currentTime;
+      freqs.forEach((f,i)=>{ const o=this.ctx.createOscillator(); const g=this.ctx.createGain();
+        const on=t+i*step*0.5, off=on+step*0.4; o.type='triangle'; o.frequency.setValueAtTime(f,on);
+        g.gain.setValueAtTime(0.001,on); g.gain.linearRampToValueAtTime(0.18,on+0.05); g.gain.exponentialRampToValueAtTime(0.0001,off);
+        o.connect(g).connect(this.master); o.start(on); o.stop(off+0.05);
+      });
+    }
+    _buzz(freq, dur){
+      if(!this.enabled) return; this.ensureCtx();
+      const t=this.ctx.currentTime; const o=this.ctx.createOscillator(); const g=this.ctx.createGain();
+      o.type='sawtooth'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0.001,t); g.gain.linearRampToValueAtTime(0.25,t+0.05); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g).connect(this.master); o.start(t); o.stop(t+dur+0.05);
+    }
+    playClick(){ this._tone(880,0.05,'square',0.18); }
+    playLock(){ this._arp([660,880],0.18); }
+    playReveal(){ this._arp([523,659,784,1046],0.55); }
+    playNextRound(){ this._arp([392,523,659],0.35); }
+    playTick(){ this._tone(1200,0.04,'square',0.22); }
+    playTimeout(){ this._buzz(220,0.6); }
+  }
+  const audio = new AudioManager();
+  const soundToggle = document.getElementById('soundToggle');
+  const volEl = document.getElementById('vol');
+  soundToggle.addEventListener('click', ()=>{ audio.setEnabled(!audio.enabled); soundToggle.textContent = audio.enabled? '🔊':'🔇'; audio.playClick(); });
+  volEl.addEventListener('input', ()=> audio.setVolume(parseFloat(volEl.value)));
+  window.addEventListener('pointerdown', ()=>{ if(!audio.ctx) audio.ensureCtx(); const bgm=document.getElementById('bgm'); if(audio.enabled&&bgm&&bgm.src&&bgm.src.length>0) bgm.play().catch(()=>{}); }, { once:true });
+
+  // ===== Canvas & World =====
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const W = { xMin:-10, xMax:10, yMin:-8, yMax:8 };
+  const xToPx = x => { const pad=40; return pad + (x - W.xMin) * (canvas.width - 2*pad) / (W.xMax - W.xMin); };
+  const yToPx = y => { const pad=30; return pad + (W.yMax - y) * (canvas.height - 2*pad) / (W.yMax - W.yMin); };
+
+  // ===== Data =====
+  let data = [];
+  let trueLine = { m: 1.2, b: 0.5 };
+  const noise = 0.9;
+
+  function genDataset(keepLine=false){
+    if(!keepLine){
+      trueLine.m = rnd(-2.5, 2.5);
+      trueLine.b = rnd(-2, 2);
+    }
+    data = [];
+    const N = 60;
+    for(let i=0;i<N;i++){
+      const x = rnd(W.xMin*0.9, W.xMax*0.9);
+      const yTrue = trueLine.m * x + trueLine.b;
+      const y = yTrue + rnd(-noise, noise);
+      if(y>W.yMin-1 && y<W.yMax+1) data.push({x, y});
+    }
+  }
+
+  // ===== Players & Rounds =====
+  const players = [
+    { name:'Pemain 1', guess:{m:1, b:0}, locked:false, rmse:null, color:'#38bdf8' },
+    { name:'Pemain 2', guess:{m:1, b:0}, locked:false, rmse:null, color:'#a78bfa' }
+  ];
+  let turn = 0; // 0 => P1, 1 => P2
+  let round = 1;
+  let score = { p1:0, p2:0 };
+  let history = []; // {round, rmse1, rmse2, winner}
+
+  // ===== Timer =====
+  const timerBox = document.getElementById('timerBox');
+  let timerId = null;
+  let timeLeft = TIME_LIMIT;
+
+  function startTimer(){
+    stopTimer();
+    timeLeft = TIME_LIMIT;
+    updateTimerBox();
+    let lastFloor = Math.floor(timeLeft);
+    timerId = setInterval(()=>{
+      timeLeft = Math.max(0, timeLeft - 0.05);
+      const nowFloor = Math.floor(timeLeft);
+      updateTimerBox();
+      if(nowFloor !== lastFloor && nowFloor <= 5 && nowFloor >= 1){
+        audio.playTick();
+      }
+      lastFloor = nowFloor;
+      if(timeLeft <= 0){
+        stopTimer();
+        audio.playTimeout();
+        autoLockDueToTime();
+      }
+    }, 50);
+  }
+  function stopTimer(){ if(timerId) clearInterval(timerId); timerId = null; }
+  function updateTimerBox(){
+    timerBox.textContent = `${fmt(timeLeft,1)}s`;
+    if(timeLeft <= 5){ timerBox.className = 'badge err'; }
+    else if(timeLeft <= 12){ timerBox.className = 'badge warn'; }
+    else { timerBox.className = 'badge ok'; }
+  }
+  function autoLockDueToTime(){ if(!players[turn].locked){ doLock(true); } }
+
+  // ===== UI Elements =====
+  const slopeEl = document.getElementById('slope');
+  const interceptEl = document.getElementById('intercept');
+  const guessEqEl = document.getElementById('guessEq');
+  const liveRmseEl = document.getElementById('liveRmse');
+  const lockBtn = document.getElementById('lockBtn');
+  const revealBtn = document.getElementById('revealBtn');
+  const rmseP1El = document.getElementById('rmseP1');
+  const rmseP2El = document.getElementById('rmseP2');
+  const trueEqEl  = document.getElementById('trueEq');
+  const turnTag = document.getElementById('turnTag');
+  const winnerText = document.getElementById('winnerText');
+  const roundTag = document.getElementById('roundTag');
+  const scoreP1El = document.getElementById('scoreP1');
+  const scoreP2El = document.getElementById('scoreP2');
+  const historyBody = document.getElementById('historyBody');
+  const nextRoundBtn = document.getElementById('nextRoundBtn');
+  const resetMatchBtn = document.getElementById('resetMatchBtn');
+  const btnNewData = document.getElementById('btnNewData');
+  const btnSameData = document.getElementById('btnSameData');
+
+  // klik SFX
+  [btnNewData, btnSameData, lockBtn, revealBtn, nextRoundBtn, resetMatchBtn,
+   document.getElementById('mMinus'), document.getElementById('mPlus'),
+   document.getElementById('bMinus'), document.getElementById('bPlus')
+  ].forEach(el=> el && el.addEventListener('click', ()=> audio.playClick()));
+
+  document.getElementById('mMinus').onclick = ()=>{ slopeEl.value = (+slopeEl.value - 0.05).toFixed(2); syncFromControls(); };
+  document.getElementById('mPlus').onclick  = ()=>{ slopeEl.value = (+slopeEl.value + 0.05).toFixed(2); syncFromControls(); };
+  document.getElementById('bMinus').onclick = ()=>{ interceptEl.value = (+interceptEl.value - 0.1).toFixed(1); syncFromControls(); };
+  document.getElementById('bPlus').onclick  = ()=>{ interceptEl.value = (+interceptEl.value + 0.1).toFixed(1); syncFromControls(); };
+
+  slopeEl.oninput = interceptEl.oninput = syncFromControls;
+  function syncFromControls(){
+    const p = players[turn];
+    p.guess.m = parseFloat(slopeEl.value);
+    p.guess.b = parseFloat(interceptEl.value);
+    guessEqEl.textContent = `y = ${fmt(p.guess.m)}x + ${fmt(p.guess.b,1)}`;
+    liveRmseEl.textContent = data.length? fmt(rmse(data, p.guess)): '—';
+    draw();
+  }
+
+  btnNewData.onclick = ()=> {
+    genDataset(false);
+    resetGuesses();
+    draw();
+  };
+  btnSameData.onclick = ()=> {
+    resetGuesses(true);
+    draw();
+  };
+
+  // ===== RMSE =====
+  function rmse(points, line){
+    const n = points.length || 1;
+    let s = 0;
+    for(const p of points){
+      const yhat = line.m * p.x + line.b;
+      s += (p.y - yhat)**2;
+    }
+    return Math.sqrt(s/n);
+  }
+
+  // ===== Lock, Reveal, Ronde =====
+  function doLock(auto=false){
+    const p = players[turn];
+    if(p.locked) return;
+    p.locked = true;
+    p.rmse = rmse(data, p.guess);
+    audio.playLock();
+
+    if(turn===0){
+      rmseP1El.textContent = fmt(p.rmse);
+      turn = 1;
+      setUiForTurn();
+      startTimer(); // pemain 2
+    }else{
+      rmseP2El.textContent = fmt(p.rmse);
+      lockBtn.disabled = true;
+      revealBtn.disabled = false;
+      stopTimer();
+    }
+    draw();
+  }
+  lockBtn.onclick = ()=>doLock(false);
+
+  revealBtn.onclick = ()=>{
+    trueEqEl.innerHTML = `Garis asli: <span class="eq mono">y = ${fmt(trueLine.m)}x + ${fmt(trueLine.b,1)}</span>`;
+    const a = players[0].rmse ?? Infinity;
+    const b = players[1].rmse ?? Infinity;
+
+    let winner;
+    if(a===b){
+      winnerText.innerHTML = '🤝 <span class="badge">Seri!</span>';
+      winner = 'Seri';
+      score.p1 += 0.5; score.p2 += 0.5;
+    }else if(a<b){
+      winnerText.innerHTML = `🏆 <span class="badge ok">Pemenang: Pemain 1</span>`;
+      winner = 'Pemain 1';
+      score.p1 += 1;
+    }else{
+      winnerText.innerHTML = `🏆 <span class="badge ok">Pemenang: Pemain 2</span>`;
+      winner = 'Pemain 2';
+      score.p2 += 1;
+    }
+    audio.playReveal();
+
+    scoreP1El.textContent = score.p1;
+    scoreP2El.textContent = score.p2;
+
+    history.push({ round, rmse1: isFinite(a)? fmt(a):'—', rmse2: isFinite(b)? fmt(b):'—', winner });
+    renderHistory();
+
+    nextRoundBtn.disabled = false;
+    draw(true);
+  };
+
+  nextRoundBtn.onclick = ()=>{
+    round += 1;
+    roundTag.textContent = `Ronde ${round}`;
+    genDataset(false);   // dataset baru
+    resetGuesses();
+    draw();
+    audio.playNextRound();
+  };
+
+  resetMatchBtn.onclick = ()=>{
+    score = {p1:0, p2:0};
+    history = [];
+    round = 1;
+    scoreP1El.textContent = '0';
+    scoreP2El.textContent = '0';
+    roundTag.textContent = 'Ronde 1';
+    renderHistory();
+    genDataset(false);
+    resetGuesses();
+    draw();
+  };
+
+  function renderHistory(){
+    historyBody.innerHTML = history.map(h=>`
+      <tr>
+        <td>#${h.round}</td>
+        <td class="mono">${h.rmse1}</td>
+        <td class="mono">${h.rmse2}</td>
+        <td>${h.winner}</td>
+      </tr>
+    `).join('');
+  }
+
+  function resetGuesses(){
+    players.forEach(p=>{
+      p.guess = {m:1, b:0};
+      p.locked = false; p.rmse = null;
+    });
+    slopeEl.value = 1; interceptEl.value = 0;
+    turn = 0;
+    liveRmseEl.textContent = '—';
+    guessEqEl.textContent = 'y = 1.00x + 0.0';
+    rmseP1El.textContent = '—';
+    rmseP2El.textContent = '—';
+    trueEqEl.textContent = 'Garis asli: disembunyikan';
+    winnerText.textContent = '';
+    setUiForTurn();
+    revealBtn.disabled = true;
+    nextRoundBtn.disabled = true;
+    startTimer(); // timer pemain 1
+  }
+
+  function setUiForTurn(){
+    turnTag.textContent = turn===0? 'Pemain 1' : 'Pemain 2';
+    lockBtn.textContent = `✅ Kunci Tebakan ${turn===0? 'Pemain 1':'Pemain 2'}`;
+    lockBtn.disabled = players[turn].locked;
+    const p = players[turn];
+    slopeEl.value = p.guess.m;
+    interceptEl.value = p.guess.b;
+    syncFromControls();
+  }
+
+  // Keyboard
+  window.addEventListener('keydown', (e)=>{
+    if(players[turn].locked) return;
+    if(e.key==='ArrowLeft'){ slopeEl.value = (+slopeEl.value - 0.02).toFixed(2); syncFromControls(); }
+    if(e.key==='ArrowRight'){ slopeEl.value = (+slopeEl.value + 0.02).toFixed(2); syncFromControls(); }
+    if(e.key==='ArrowUp'){ interceptEl.value = (+interceptEl.value + 0.05).toFixed(2); syncFromControls(); }
+    if(e.key==='ArrowDown'){ interceptEl.value = (+interceptEl.value - 0.05).toFixed(2); syncFromControls(); }
+    if(e.key==='Enter'){ doLock(false); }
+  });
+
+  // ===== Gambar =====
+  function draw(showTrue=false){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawGrid();
+    // data
+    for(const p of data){
+      ctx.beginPath();
+      ctx.arc(xToPx(p.x), yToPx(p.y), 3, 0, Math.PI*2);
+      ctx.fillStyle = '#8ab4ff'; ctx.globalAlpha = .9; ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // garis tebakan aktif
+    const gp = players[turn].guess;
+    drawLine(gp.m, gp.b, players[turn].color, 2.8, [0]);
+    // garis yang sudah terkunci (putus-putus)
+    players.forEach((pl)=>{ if(pl.locked) drawLine(pl.guess.m, pl.guess.b, pl.color, 1.6, [8,6], .85); });
+    // garis asli
+    if(showTrue) drawLine(trueLine.m, trueLine.b, '#22c55e', 3.2, [0]);
+    // label sumbu
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.font = '12px Inter, system-ui, Arial';
+    ctx.fillText('x', xToPx(W.xMax)-12, yToPx(0)-8);
+    ctx.fillText('y', xToPx(0)+8, yToPx(W.yMax)+14);
+  }
+
+  function drawGrid(){
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(255,255,255,.18)';
+    for(let x=Math.ceil(W.xMin); x<=W.xMax; x++){
+      ctx.beginPath(); ctx.moveTo(xToPx(x), yToPx(W.yMin)); ctx.lineTo(xToPx(x), yToPx(W.yMax)); ctx.stroke();
+    }
+    for(let y=Math.ceil(W.yMin); y<=W.yMax; y++){
+      ctx.beginPath(); ctx.moveTo(xToPx(W.xMin), yToPx(y)); ctx.lineTo(xToPx(W.xMax), yToPx(y)); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(xToPx(W.xMin), yToPx(0)); ctx.lineTo(xToPx(W.xMax), yToPx(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xToPx(0), yToPx(W.yMin)); ctx.lineTo(xToPx(0), yToPx(W.yMax)); ctx.stroke();
+  }
+
+  function drawLine(m, b, color='#38bdf8', width=2, dash=[0], alpha=1){
+    const xs = [W.xMin-1, W.xMax+1];
+    const pts = xs.map(x => ({ x, y: m*x + b }));
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    ctx.moveTo(xToPx(pts[0].x), yToPx(pts[0].y));
+    ctx.lineTo(xToPx(pts[1].x), yToPx(pts[1].y));
+    ctx.stroke();
+    ctx.setLineDash([0]);
+    ctx.restore();
+  }
+
+  // ===== Init =====
+  genDataset(false);
+  setUiForTurn();
+  const resize = ()=>{
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    draw();
+  };
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+  startTimer();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+:root{
+  --felt:#14532d; /* hijau meja kasino */
+  --felt-dark:#0f3d21;
+  --gold:#ffd166;
+  --chip:#e11d48;
+  --ink:#0f172a;
+}
+body{
+  background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 70%);
+  color:#f8fafc; min-height:100dvh;
+}
+.table-wrap{border:4px solid #0a0a0a; border-radius:24px; background:rgba(0,0,0,.15); box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.header-brand{font-family: "Georgia", serif; letter-spacing:.5px}
+.badge-gold{background:linear-gradient(180deg,#ffe6a7,#f3c969,#d6a239); color:#3a2c00; border:1px solid #d6a239}
+
+/* kartu angka */
+.card-num{width:72px; height:100px; border-radius:10px; background:#fff; color:#111; border:2px solid #222; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow:0 6px 14px rgba(0,0,0,.35); position:relative;}
+.card-num.neg{background:#111; color:#fff; border-color:#333}
+.card-num .corner{position:absolute; top:6px; left:8px; font-weight:700; font-size:12px}
+.card-num .big{font-size:28px; font-weight:800;}
+.card-num .suit{font-size:12px; opacity:.65}
+
+.area-title{font-weight:700; text-transform:uppercase; font-size:.85rem; letter-spacing:.08em; opacity:.9}
+
+/* chip skor */
+.chip{width:38px; height:38px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #fff 0 10%, var(--chip) 11% 60%, #7f1028 61% 100%); border:2px solid #fff; box-shadow: inset 0 0 0 3px #fff3, 0 4px 8px #000a; display:grid; place-items:center; font-weight:800}
+
+.btn-casino{border:2px solid #fff2; color:#fff;}
+.btn-casino:hover{border-color:#fff8;}
+
+.panel{background:rgba(255,255,255,.06); border:1px solid #ffffff22; border-radius:14px}
+
+.glow{box-shadow:0 0 0 2px #ffffff18, inset 0 0 30px #ffffff10}
+
+.selector .form-select, .selector .form-control{background:#0b1220; color:#e5e7eb; border:1px solid #334155}
+
+.muted{opacity:.8}
+.turn-indicator{height:8px; border-radius:999px; background:linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6)}
+.footer-note{font-size:.85rem; opacity:.85}
+.small-mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:.9rem}
+
+@keyframes deal {
+  from{transform: translateY(-20px) scale(.9); opacity:0}
+  to{transform: translateY(0) scale(1); opacity:1}
+}
+.deal{animation: deal .35s ease-out}
